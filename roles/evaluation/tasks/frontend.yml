@@ -1,0 +1,18 @@
+---
+- name: Set component_name
+  set_fact:
+    component_key: app
+    component_value: counter-frontend
+
+- include_tasks: check_deployment.yml
+
+- include_tasks: check_hpa.yml
+  vars:
+    maxReplicas: 4
+    minReplicas: 2
+
+- include_tasks: check_pod.yml
+
+- include_tasks: check_route.yml
+
+- include_tasks: check_service.yml

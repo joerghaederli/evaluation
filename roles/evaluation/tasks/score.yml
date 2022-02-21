@@ -1,0 +1,59 @@
+---
+- name: Make sure evalution case has been provided
+  assert:
+    that:
+      - evaluation_case is defined
+      - evaluation_case | length > 0
+    fail_msg: You must provide a evalution case description
+    quiet: true
+
+- name: Set achieved_score to 0
+  set_fact:
+    achieved_score: 0
+  when: achieved_score is not defined
+
+- name: Set possible_score to 0
+  set_fact:
+    possible_score: 0
+  when: possible_score is not defined
+
+- name: Show output and result if failed
+  debug:
+    msg:
+    - "{{ output }}"
+    - "{{ result }}"
+  when:
+  - result is defined
+  - result is failed
+
+- name: Set achieved_score
+  set_fact:
+    achieved_score: "{{ achieved_score | int  + 1 }}"
+  when:
+  - result is defined
+  - result is not failed
+
+- name: Set possible_score
+  set_fact:
+    possible_score: "{{ possible_score | int + 1 }}"
+
+- name: Setup evalutation cases
+  lineinfile:
+    create: yes
+    path: "{{ evaluation_cases_path }}"
+    insertbefore: BOF
+    line: '# Evalution cases'
+  changed_when: False
+
+- name: Add evalutation case
+  lineinfile:
+    create: yes
+    path: "{{ evaluation_cases_path }}"
+    line: |
+      ## Test Nr. {{ possible_score }}
+
+      {{ evaluation_case }}
+  changed_when: False
+  when:
+  - evaluation_case is defined
+  - evaluation_case | length > 0

@@ -1,0 +1,50 @@
+---
+- name: Search for all pods with the label {{ component_key }}={{ component_value }}
+  k8s_info:
+    kind: Pod
+    label_selectors:
+      - "{{ component_key }}={{ component_value }}"
+    namespace: "{{ item.name }}-{{ ns }}"
+  environment:
+    K8S_AUTH_API_KEY: "{{ item.api_key }}"
+    K8S_AUTH_HOST: "{{ item.auth_host }}"
+  ignore_errors: True
+  register: output
+
+- name: Check the result
+  assert:
+    that:
+      - output.resources | length > 0
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+  vars:
+    evaluation_case: At least one pod {{ component_value }} in namespace [TEAMNAME]-{{ ns }} must have all replicas up and running
+
+- name: Search for all pods with the label {{ component_key }}={{ component_value }} in running state
+  k8s_info:
+    kind: Pod
+    field_selectors:
+      - status.phase=Running
+    label_selectors:
+      - "{{ component_key }}={{ component_value }}"
+    namespace: "{{ item.name }}-{{ ns }}"
+  environment:
+    K8S_AUTH_API_KEY: "{{ item.api_key }}"
+    K8S_AUTH_HOST: "{{ item.auth_host }}"
+  ignore_errors: True
+  register: output
+
+- name: Check the result
+  assert:
+    that:
+      - output.resources | length > 0
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+  vars:
+    evaluation_case: Pod with the name {{ component_value }} and label {{ component_key }}={{ component_value }} in namespace [TEAMNAME]-{{ ns }} is in phase Running

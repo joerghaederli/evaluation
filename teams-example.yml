@@ -1,0 +1,5 @@
+---
+teams:
+  - name: daxofew249
+    api_key: sha256~HIDDEN
+    auth_host: https://api.sandbox.x8i5.p1.openshiftapps.com:6443

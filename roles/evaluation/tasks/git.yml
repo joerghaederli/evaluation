@@ -1,0 +1,31 @@
+---
+- name: Create temporary directory
+  tempfile:
+    state: directory
+  register: tmp_dir
+
+- name: Checkout {{ item.git_url }} of branch {{ git_branch }}
+  git:
+    repo: "{{ item.git_url }}"
+    dest: "{{ tmp_dir.path }}"
+    single_branch: yes
+    version: "{{ git_branch }}"
+  ignore_errors: True
+  register: output
+
+- name: Check the result
+  assert:
+    that:
+      - output is not failed
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+  vars:
+    evaluation_case: Checkout of team [TEAMNAME] git repository of branch {{ git_branch }} must succeed
+
+- name: Delete temporary directory
+  file:
+    state: absent
+    path: "{{ tmp_dir.path }}"

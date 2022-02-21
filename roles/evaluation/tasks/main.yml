@@ -1,0 +1,74 @@
+---
+- name: Run evaluation for git objects
+  include_tasks: git.yml
+  loop:
+  - master
+  - development
+  loop_control:
+    loop_var: git_branch
+
+- name: Run evaluation for general objects
+  include_tasks: general.yml
+  loop:
+  - dev
+  # - stage
+  loop_control:
+    loop_var: ns
+
+- name: Run evaluation for backend objects
+  include_tasks: backend.yml
+  loop:
+  - dev
+  # - stage
+  loop_control:
+    loop_var: ns
+
+- name: Run evaluation for frontend objects
+  include_tasks: frontend.yml
+  loop:
+  - dev
+  # - stage
+  loop_control:
+    loop_var: ns
+
+- name: Run evaluation for pgadmin objects
+  include_tasks: pgadmin.yml
+  loop:
+  - dev
+  # - stage
+  loop_control:
+    loop_var: ns
+
+- name: Run evaluation for postgresql objects
+  include_tasks: postgresql.yml
+  loop:
+  - dev
+  # - stage
+  loop_control:
+    loop_var: ns
+
+- name: Run evaluation for secret objects
+  include_tasks: secret.yml
+  loop:
+  - dev
+  # - stage
+  loop_control:
+    loop_var: ns
+
+- name: Display possible score for team {{ item.name }}
+  debug:
+    var: possible_score
+
+- name: Display achieved score for team {{ item.name }}
+  debug:
+    var: achieved_score
+
+- name: Add scores to results.txt
+  lineinfile:
+    create: yes
+    path: "{{ evaluation_results_path }}"
+    line: |
+      {{ item.name }}:
+        possible score: {{ possible_score }}
+        achieved score: {{ achieved_score }}
+        grade: {{ (((achieved_score | int * 5) / (possible_score | int)) + 1) | float | round(1) }}

@@ -1,0 +1,46 @@
+---
+- name: Set evaluation_https_url
+  set_fact:
+    evaluation_https_url: "{{ item.auth_host | regex_replace('api', component_value + '-' + item.name + '-' + ns + '.apps') | regex_replace(':6443', '') }}"
+
+- name: Set evaluation_http_url
+  set_fact:
+    evaluation_http_url: "{{ evaluation_https_url | regex_replace('https', 'http') }}"
+
+- name: Check if we can connect (GET) to {{ component_value }} using http and it returns a status 302
+  uri:
+    url: "{{ evaluation_http_url }}"
+    follow_redirects: no
+    status_code: 302
+  register: output
+  ignore_errors: True
+
+- name: Check the result
+  assert:
+    that:
+      - output.status == 302
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+  vars:
+    evaluation_case: URL of {{ component_value }} in namespace [TEAMNAME]-{{ ns }} must redirect http traffic to https
+
+- name: Check if we can connect (GET) to {{ component_value }} using https and it returns a status 200
+  uri:
+    url: "{{ evaluation_https_url }}"
+  register: output
+  ignore_errors: True
+
+- name: Check the result
+  assert:
+    that:
+      - output.status == 200
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+  vars:
+    evaluation_case: URL of {{ component_value }} in namespace [TEAMNAME]-{{ ns }} must return a status of 200

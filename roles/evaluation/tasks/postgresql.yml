@@ -1,0 +1,11 @@
+---
+- name: Set component_name
+  set_fact:
+    component_key: name
+    component_value: counter-postgresql
+
+- include_tasks: check_deployment.yml
+
+- include_tasks: check_pod.yml
+
+- include_tasks: check_service.yml

@@ -1,0 +1,24 @@
+---
+- name: Search for all services with the name {{ component_value }}
+  k8s_info:
+    api_version: v1
+    kind: Service
+    name: "{{ component_value }}"
+    namespace: "{{ item.name }}-{{ ns }}"
+  environment:
+    K8S_AUTH_API_KEY: "{{ item.api_key }}"
+    K8S_AUTH_HOST: "{{ item.auth_host }}"
+  ignore_errors: True
+  register: output
+
+- name: Check the result
+  assert:
+    that:
+      - output.resources | length > 0
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+  vars:
+    evaluation_case: Service with the name {{ component_value }} in namespace [TEAMNAME]-{{ ns }} must exist

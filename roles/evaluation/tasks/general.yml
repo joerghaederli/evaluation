@@ -1,0 +1,138 @@
+---
+### general objects
+- name: Get namespace {{ item.name }}-{{ ns }}
+  k8s_info:
+    api_version: v1
+    kind: Namespace
+    name: "{{ item.name }}-{{ ns }}"
+  environment:
+    K8S_AUTH_API_KEY: "{{ item.api_key }}"
+    K8S_AUTH_HOST: "{{ item.auth_host }}"
+  ignore_errors: True
+  register: output
+
+- name: Check the result
+  assert:
+    that:
+      - output.resources | length > 0
+      - output.resources[0].status.phase == 'Active'
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+  vars:
+    evaluation_case: Namespace {{ item.name }}-{{ ns }} must exists and in phase Active
+
+- name: Get a list of all deployment objects
+  k8s_info:
+    kind: Deployment
+    namespace: "{{ item.name }}-{{ ns }}"
+  environment:
+    K8S_AUTH_API_KEY: "{{ item.api_key }}"
+    K8S_AUTH_HOST: "{{ item.auth_host }}"
+  ignore_errors: True
+  register: output
+
+- name: Check the result
+  assert:
+    that:
+      - output.resources | length > 0
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+  vars:
+    evaluation_case: At least one Deployment in namespace [TEAMNAME]-{{ ns }} must exist
+
+- name: Get a list of all service objects
+  k8s_info:
+    api_version: v1
+    kind: Service
+    namespace: "{{ item.name }}-{{ ns }}"
+  environment:
+    K8S_AUTH_API_KEY: "{{ item.api_key }}"
+    K8S_AUTH_HOST: "{{ item.auth_host }}"
+  ignore_errors: True
+  register: output
+
+- name: Check the result
+  assert:
+    that:
+      - output.resources | length > 0
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+  vars:
+    evaluation_case: At least one Service in namespace [TEAMNAME]-{{ ns }} must exist
+
+- name: Get a list of all pod objects
+  k8s_info:
+    kind: Pod
+    namespace: "{{ item.name }}-{{ ns }}"
+  environment:
+    K8S_AUTH_API_KEY: "{{ item.api_key }}"
+    K8S_AUTH_HOST: "{{ item.auth_host }}"
+  ignore_errors: True
+  register: output
+
+- name: Check the result
+  assert:
+    that:
+      - output.resources | length > 0
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+  vars:
+    evaluation_case: At least one Pod in namespace [TEAMNAME]-{{ ns }} must exist
+
+- name: Search for all running pods
+  k8s_info:
+    kind: Pod
+    field_selectors:
+      - status.phase=Running
+    namespace: "{{ item.name }}-{{ ns }}"
+  environment:
+    K8S_AUTH_API_KEY: "{{ item.api_key }}"
+    K8S_AUTH_HOST: "{{ item.auth_host }}"
+  ignore_errors: True
+  register: output
+
+- name: Check the result
+  assert:
+    that:
+      - output.resources | length > 0
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+  vars:
+    evaluation_case: At least one Pod in namespace [TEAMNAME]-{{ ns }} must exist and in Running state
+
+- name: Search for all HPA
+  k8s_info:
+    kind: HorizontalPodAutoscaler
+    namespace: "{{ item.name }}-{{ ns }}"
+  environment:
+    K8S_AUTH_API_KEY: "{{ item.api_key }}"
+    K8S_AUTH_HOST: "{{ item.auth_host }}"
+  ignore_errors: True
+  register: output
+
+- name: Check the result
+  assert:
+    that:
+      - output.resources | length > 0
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+  vars:
+    evaluation_case: At least one HPA in namespace [TEAMNAME]-{{ ns }} must exist

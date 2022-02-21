@@ -1,0 +1,47 @@
+---
+- name: Search for all deployments with the label {{ component_key }}={{ component_value }}
+  k8s_info:
+    kind: Deployment
+    label_selectors:
+      - "{{ component_key }}={{ component_value }}"
+    namespace: "{{ item.name }}-{{ ns }}"
+  environment:
+    K8S_AUTH_API_KEY: "{{ item.api_key }}"
+    K8S_AUTH_HOST: "{{ item.auth_host }}"
+  ignore_errors: True
+  register: output
+
+- name: Check the result
+  assert:
+    that:
+      - output.resources | length > 0
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+  vars:
+    evaluation_case: At least one Deployment with the label {{ component_key }}={{ component_value }} in namespace [TEAMNAME]-{{ ns }} must exist
+
+- name: Search for Deployment with the name {{ component_value }} and readyReplicas == replicas
+  k8s_info:
+    kind: Deployment
+    name: "{{ component_value }}"
+    namespace: "{{ item.name }}-{{ ns }}"
+  environment:
+    K8S_AUTH_API_KEY: "{{ item.api_key }}"
+    K8S_AUTH_HOST: "{{ item.auth_host }}"
+  ignore_errors: True
+  register: output
+
+- name: Check the result
+  assert:
+    that:
+      - output.resources[0].status.readyReplicas == output.resources[0].status.replicas
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+  vars:
+    evaluation_case: Deployment {{ component_value }} in namespace [TEAMNAME]-{{ ns }} must have all replicas up and running

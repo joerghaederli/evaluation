@@ -1,0 +1,85 @@
+---
+- name: Make sure maxReplicas has been provided
+  assert:
+    that:
+      - maxReplicas is defined
+      - maxReplicas is regex("^[0-9]+$")
+    fail_msg: You must provide a int for maxReplicas
+    quiet: true
+
+- name: Make sure minReplicas has been provided
+  assert:
+    that:
+      - minReplicas is defined
+      - minReplicas is regex("^[0-9]+$")
+    fail_msg: You must provide a int for minReplicas
+    quiet: true
+
+- name: Search for all HPAs with the name {{ component_value }}
+  k8s_info:
+    kind: HorizontalPodAutoscaler
+    name: "{{ component_value }}"
+    namespace: "{{ item.name }}-{{ ns }}"
+  environment:
+    K8S_AUTH_API_KEY: "{{ item.api_key }}"
+    K8S_AUTH_HOST: "{{ item.auth_host }}"
+  ignore_errors: True
+  register: output
+
+- name: Check the result
+  assert:
+    that:
+      - output.resources[0].metadata.name == '{{ component_value }}'
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+  vars:
+    evaluation_case: At least one HPA with the name {{ component_value }} in namespace [TEAMNAME]-{{ ns }} must exist
+
+- name: Search for HPA with the name {{ component_value }} and maxReplicas={{ maxReplicas }}
+  k8s_info:
+    kind: HorizontalPodAutoscaler
+    name: "{{ component_value }}"
+    namespace: "{{ item.name }}-{{ ns }}"
+  environment:
+    K8S_AUTH_API_KEY: "{{ item.api_key }}"
+    K8S_AUTH_HOST: "{{ item.auth_host }}"
+  ignore_errors: True
+  register: output
+
+- name: Check the result
+  assert:
+    that:
+      - output.resources[0].spec.maxReplicas == {{ maxReplicas }}
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+  vars:
+    evaluation_case: HPA with the name {{ component_value }} in namespace [TEAMNAME]-{{ ns }} must be set to maxReplicas={{ maxReplicas }}
+
+- name: Search for HPA with the name {{ component_value }} and minReplicas={{ minReplicas }}
+  k8s_info:
+    kind: HorizontalPodAutoscaler
+    name: "{{ component_value }}"
+    namespace: "{{ item.name }}-{{ ns }}"
+  environment:
+    K8S_AUTH_API_KEY: "{{ item.api_key }}"
+    K8S_AUTH_HOST: "{{ item.auth_host }}"
+  ignore_errors: True
+  register: output
+
+- name: Check the result
+  assert:
+    that:
+      - output.resources[0].spec.minReplicas == {{ minReplicas }}
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+  vars:
+    evaluation_case: HPA with the name {{ component_value }} in namespace [TEAMNAME]-{{ ns }} must be set to minReplicas={{ minReplicas }}

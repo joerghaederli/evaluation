@@ -1,0 +1,105 @@
+---
+- name: Set component_name
+  set_fact:
+    component_name: counter-postgresadmin
+
+- name: Search for all pods with the label {{ component_key }}={{ component_value }}
+  k8s_info:
+    kind: Pod
+    label_selectors:
+      - "{{ component_key }}={{ component_value }}"
+    namespace: "{{ item.name }}-{{ ns }}"
+  environment:
+    K8S_AUTH_API_KEY: "{{ item.api_key }}"
+    K8S_AUTH_HOST: "{{ item.auth_host }}"
+  ignore_errors: True
+  register: output
+
+- name: Check the result
+  assert:
+    that:
+      - output.resources | length > 0
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+
+- name: Search for all pods with the label {{ component_key }}={{ component_value }} in running state
+  k8s_info:
+    kind: Pod
+    field_selectors:
+      - status.phase=Running
+    label_selectors:
+      - "{{ component_key }}={{ component_value }}"
+    namespace: "{{ item.name }}-{{ ns }}"
+  environment:
+    K8S_AUTH_API_KEY: "{{ item.api_key }}"
+    K8S_AUTH_HOST: "{{ item.auth_host }}"
+  ignore_errors: True
+  register: output
+
+- name: Check the result
+  assert:
+    that:
+      - output.resources | length > 0
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+
+- name: Search for all deployment with the name {{ component_key }}={{ component_value }} and check if readyReplicas == replicas
+  k8s_info:
+    kind: Deployment
+    name: {{ component_key }}={{ component_value }}
+    namespace: "{{ item.name }}-{{ ns }}"
+  environment:
+    K8S_AUTH_API_KEY: "{{ item.api_key }}"
+    K8S_AUTH_HOST: "{{ item.auth_host }}"
+  ignore_errors: True
+  register: output
+
+- name: Check the result
+  assert:
+    that:
+      - output.resources[0].status.readyReplicas == output.resources[0].status.replicas
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+
+- name: Check if we can connect (GET) to {{ component_value }} using http and it returns a status 302
+  uri:
+    url: "{{ item.auth_host | regex_replace('https', 'http') | regex_replace('api', component_name + '-' + item.name + '-' + ns + '.apps') | regex_replace(':6443', '') }}"
+    follow_redirects: no
+    status_code: 302
+  register: output
+  ignore_errors: True
+
+- name: Check the result
+  assert:
+    that:
+      - output.status == 302
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+
+- name: Check if we can connect (GET) to {{ component_value }} using https and it returns a status 200
+  uri:
+    url: "{{ item.auth_host | regex_replace('api', component_name + '-' + item.name + '-' + ns + '.apps') | regex_replace(':6443', '') }}"
+  register: output
+  ignore_errors: True
+
+- name: Check the result
+  assert:
+    that:
+      - output.status == 200
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
