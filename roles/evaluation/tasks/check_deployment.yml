@@ -45,3 +45,15 @@
 - include_tasks: score.yml
   vars:
     evaluation_case: Deployment {{ component_value }} in namespace [TEAMNAME]-{{ ns }} must have all replicas up and running
+
+- name: Check the result
+  assert:
+    that:
+      - "':latest' not in output.resources[0].spec.template.spec.containers[0].image"
+    quiet: true
+  register: result
+  ignore_errors: True
+
+- include_tasks: score.yml
+  vars:
+    evaluation_case: Deployment {{ component_value }} in namespace [TEAMNAME]-{{ ns }} must not run with image tag latest

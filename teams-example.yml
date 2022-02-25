@@ -1,5 +1,6 @@
 ---
 teams:
   - name: daxofew249
-    api_key: sha256~HIDDEN
+    api_key: [HIDDEN]
     auth_host: https://api.sandbox.x8i5.p1.openshiftapps.com:6443
+    git_url: https://github.com/modul-i-ch-109/counter.git
